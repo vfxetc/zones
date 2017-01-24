@@ -90,6 +90,3 @@ class Zone(object):
 			else:
 				yield rec.dumps()
 
-		if self.spf_records or self.spf_default:
-			spf = Record('@')
-
