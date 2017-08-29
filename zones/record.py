@@ -5,7 +5,7 @@ class Record(object):
 		self.name = name
 		self.data = data
 		self.ttl = kwargs.pop('ttl', None)
-		self.class_ = kwargs.pop('class', 'IN')
+		self.class_ = kwargs.pop('class_', 'IN')
 		self.type = kwargs.pop('type', None)
 
 	def __str__(self):
