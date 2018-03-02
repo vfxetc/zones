@@ -1,0 +1,7 @@
+
+- Use `named-checkconf -p` to assert it is looking at the right file.
+
+- `zones-named` command to manage building for bind.
+    - Defaults to pulling config from `/etc/bind/zonesconf.py`
+
+- `named.conf.zones` should point to abspath of zones, not through symlinks.
