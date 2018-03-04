@@ -6,14 +6,14 @@ from . import utils
 from .record import Record
 from .spf import SPF
 
-sn_epoch_start = 1483207200
+EPOCH_OFFSET = -1483207200
 
 
 class Zone(object):
 
 	def __init__(self, origin, primary_nameserver=None, hostmaster_email=None,
 		serial_number=None, slave_refresh=None, slave_retry=None,
-		slave_expiry=None, ttl=None,
+		slave_expiry=None, ttl=None, epoch_offset=EPOCH_OFFSET,
 	):
 
 		if not utils.is_fqdn(origin):
@@ -21,20 +21,20 @@ class Zone(object):
 		self.origin = origin
 
 		if primary_nameserver:
-			if not isfqdn(primary_nameserver):
+			if not utils.is_fqdn(primary_nameserver):
 				raise ValueError('primary_nameserver must be FQDN')
 			self.primary_nameserver = primary_nameserver
 		else:
 			self.primary_nameserver = 'ns1.' + origin
 
 		if hostmaster_email:
-			if not isfqdn(hostmaster_email):
+			if not utils.is_fqdn(hostmaster_email):
 				raise ValueError('hostmaster_email must be FQDN')
 			self.hostmaster_email = hostmaster_email.replace('@', '.')
 		else:
 			self.hostmaster_email = 'hostmaster.' + origin
 
-		self.serial_number = serial_number or str(int(time.time() - sn_epoch_start))
+		self.serial_number = serial_number or str(int(time.time() + epoch_offset))
 
 		self.slave_refresh = slave_refresh or '1d'
 		self.slave_retry = slave_retry or '1h'
