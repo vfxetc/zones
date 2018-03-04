@@ -29,9 +29,7 @@ def main():
     parser.add_argument('-b', '--build', action='store_true')
     parser.add_argument('-d', '--deploy', action='store_true')
 
-    parser.add_argument('-m', '--master')
     parser.add_argument('-s', '--slave', action='append', dest='slaves', default=[])
-    parser.add_argument('--catalog')
     
     parser.add_argument('-e', '--epoch-offset', type=int, default=EPOCH_OFFSET)
     
@@ -51,17 +49,6 @@ def main():
 
     # Allow group to write.
     os.umask(0o002)
-
-    if args.catalog:
-        print("--catalog is not supported yet.")
-        return 1
-        # We use bind9's "catalog" feature for transferring zones to our
-        # slave servers.
-        catalog = create_zone(args.catalog)
-        shared.mminternals_ns_v1(catalog)
-        catalog.comment('Bind catalog')
-        catalog.A('masters', args.master) # This should be us.
-        catalog.TXT('version', '1') # Required
 
     latest_build_symlink = os.path.join(args.build_root, 'latest')
     if args.build:
@@ -137,11 +124,6 @@ def build(args):
         zonename = domain + '.'
         print(domain)
 
-        # TODO: Restore this.
-        # Add it to the master catalog.
-        # hash_ = hashlib.sha1(to_wire(zonename)).hexdigest()
-        # catalog.PTR(hash_ + '.zones', zonename)
-
         zone = create_zone(zonename)
         if args.slaves:
             zone.extra_conf['also-notify'] = args.slaves
@@ -158,11 +140,6 @@ def build(args):
         with open(path, 'wb') as fh:
             fh.write(zone.dumps_zone())
 
-    # TODO: Restore the catalog.
-    # Write out the catalog.
-    # with open(os.path.join(build_dir, 'catalog.mminternals.com'), 'wb') as fh:
-        # fh.write(''.join(catalog.iterdumps()))
-    
     # Write out the conf.
     with open(os.path.join(build_dir, 'named.conf'), 'wb') as fh:
         for zone in zones:
