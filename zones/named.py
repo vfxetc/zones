@@ -80,20 +80,21 @@ def main():
 
     if not args.no_conf_check:
         print('Checking zones and config...')
-        check_conf(args)
+        check_conf(args, build_dir)
 
     if args.deploy:
 
+        live_link = os.path.abspath(os.path.join(args.build_root, 'live'))
         print('Linking to build/live...')
         try:
-            os.unlink('build/live')
+            os.unlink(live_link)
         except OSError:
             pass
-        os.symlink(os.path.abspath(build_dir), 'build/live')
+        os.symlink(os.path.abspath(build_dir), live_link)
 
         if not args.no_conf_check:
             print('Checking again...')
-            check_conf()
+            check_conf(build_dir)
 
         if not args.no_reload:
             print('Reloading service...')
@@ -196,12 +197,12 @@ def clean(args, build_dir):
             os.unlink(path)
 
 
-def check_conf(args):
+def check_conf(args, build_dir):
     try:
 
-        subprocess.check_call(['named-checkconf', os.path.join(args.build_root, 'named.conf')])
+        subprocess.check_call(['named-checkconf', os.path.join(build_dir, 'named.conf.zones')])
 
-        zone_dir = os.path.join(args.build_root, 'zones')
+        zone_dir = os.path.join(build_dir, 'zones')
         for name in os.listdir(zone_dir):
             subprocess.check_call(['named-checkzone', name + '.', os.path.join(zone_dir, name)])
 

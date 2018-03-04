@@ -3,17 +3,20 @@ from .record import Record
 class SPF(Record):
 
 	def __init__(self, *args, **kwargs):
+		self.default = kwargs.pop('default', None)
 		kwargs['type'] = 'TXT'
 		super(SPF, self).__init__(*args, **kwargs)
 		self.data = list(self.data)
-		self.default = ''
 
-	def add(self, type, spec, qualifier=''):
+	def add(self, type, spec=None, action=''):
 		if type not in ('all', 'include', 'a', 'mx', 'ptr', 'ip4', 'ip6', 'exists'):
 			raise ValueError('Bad SPF type.')
-		if qualifier not in ('', '+', '-', '?', '~'):
-			raise ValueError('Bad SPF qualifier.')
-		self.data.append('%s%s:%s' % (qualifier, type, spec))
+		if action not in ('', '+', '-', '?', '~'):
+			raise ValueError('Bad SPF action.')
+                if spec:
+		    self.data.append('%s%s:%s' % (action, type, spec))
+                else:
+                    self.data.append('%s%s' % (action, type))
 
 	def dumps(self):
 
