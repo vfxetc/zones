@@ -26,5 +26,8 @@ def google_apps(zone, name='@', **kwargs):
 
 google_apps(z)
 
-print z.dumps()
+z.add_update_key('foo', 'secret')
+
+print z.dumps_conf(filename='/etc/bind/zones/')
+print z.dumps_zone()
 

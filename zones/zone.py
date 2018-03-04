@@ -2,8 +2,8 @@ import functools
 import re
 import time
 
+from . import utils
 from .record import Record
-from .utils import isfqdn
 from .spf import SPF
 
 sn_epoch_start = 1483207200
@@ -16,7 +16,7 @@ class Zone(object):
 		slave_expiry=None, ttl=None,
 	):
 
-		if not isfqdn(origin):
+		if not utils.is_fqdn(origin):
 			raise ValueError('origin must be FQDN')
 		self.origin = origin
 
@@ -44,6 +44,10 @@ class Zone(object):
 		self.records = []
 		self.spf_records = {}
 
+		# For dumping inside and outside of zones.
+		self.extra_conf = {'type': 'master'}
+		self.outer_conf = {}
+
 	def add(self, *args, **kwargs):
 		rec = Record(*args, **kwargs)
 		self.records.append(rec)
@@ -58,18 +62,42 @@ class Zone(object):
 	def comment(self, comment):
 		self.records.append(comment)
 
-	def spf(self, name='@'):
+	def spf(self, name='@', default=''):
 		rec = self.spf_records.get(name)
 		if rec is None:
 			rec = SPF(name)
 			self.records.append(rec)
 			self.spf_records[name] = rec
+		rec.default = rec.default or default
 		return rec
 
-	def dumps(self):
-		return ''.join(self.iterdumps())
+	def add_update_key(self, name, secret, algorithm='hmac-md5', update_policy='self'):
+		fqdn = utils.join_name(name, self.origin)
+		self.outer_conf['key "{}"'.format(fqdn)] = {
+			'secret': '"{}"'.format(secret),
+			'algorithm': algorithm
+		}
+		if update_policy:
+			self.extra_conf.setdefault('update-policy', []).append(
+				'grant {} {} {}'.format(fqdn, update_policy, self.origin)
+			)
 
-	def iterdumps(self):
+	def dumps_conf(self, *args, **kwargs):
+		return ''.join(self.iterdumps_conf(*args, **kwargs))
+
+	def iterdumps_conf(self, **kwargs):
+		for x in utils.iterdumps_conf(self.outer_conf):
+			yield x
+		conf = self.extra_conf.copy()
+		conf.update(kwargs)
+		for x in utils.iterdumps_conf({'zone "{}"'.format(self.origin): conf}):
+			yield x
+
+
+	def dumps_zone(self):
+		return ''.join(self.iterdumps_zone())
+
+	def iterdumps_zone(self):
 
 		yield '$ORIGIN %s\n' % self.origin
 		yield '$TTL %s\n' % self.ttl
