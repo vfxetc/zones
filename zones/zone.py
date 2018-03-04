@@ -60,7 +60,7 @@ class Zone(object):
 			raise AttributeError(name)
 
 	def comment(self, comment):
-		self.records.append(comment)
+		self.records.append(''.join('; ' + line for line in comment.splitlines()))
 
 	def spf(self, name='@', default=''):
 		rec = self.spf_records.get(name)
@@ -113,8 +113,7 @@ class Zone(object):
 
 		for rec in self.records:
 			if isinstance(rec, basestring):
-				for line in rec.splitlines():
-					yield ';; %s\n' % line.rstrip()
+				yield rec.rstrip() + '\n'
 			else:
 				yield rec.dumps()
 
