@@ -41,6 +41,8 @@ def main():
     parser.add_argument('--build-root', default='build')
     parser.add_argument('--build-name', default=datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S'))
 
+    parser.add_argument('--reload-cmd')
+
     parser.add_argument('--no-conf-check', action='store_true')
     parser.add_argument('--no-live-check', action='store_true')
     parser.add_argument('--no-reload', action='store_true')
@@ -88,7 +90,10 @@ def main():
 
         if not args.no_reload:
             print('Reloading service...')
-            subprocess.check_call(['sudo', 'systemctl', 'reload', 'bind9'])
+            if args.reload_cmd:
+                subprocess.check_call(args.reload_cmd, shell=True)
+            else:
+                subprocess.check_call(['sudo', 'systemctl', 'reload', 'bind9'])
 
         if not args.no_live_check:
             print('Checking live local records...')
