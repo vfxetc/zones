@@ -71,15 +71,23 @@ class Zone(object):
         rec.default = rec.default or default
         return rec
 
-    def add_update_key(self, name, secret, algorithm='hmac-md5', update_policy='self'):
-        fqdn = utils.join_name(name, self.origin)
+    def add_update_key(self, key_name, secret, algorithm='hmac-md5', match='self', target=None, permission='grant'):
+        fqdn = key_name if key_name.endswith('.') else utils.join_name(key_name, self.origin)
         self.outer_conf['key "{}"'.format(fqdn)] = {
             'secret': '"{}"'.format(secret),
             'algorithm': algorithm
         }
-        if update_policy:
+        if match:
+            if permission not in ('grant', 'deny'):
+                raise ValueError("Invalid permission.", permission)
+            if match not in ('6to4-self', 'external', 'krb5-self', 'krb5-subdomain', 'ms-self',
+                    'ms-subdomain', 'name', 'self', 'selfsub', 'selfwildcard', 'subdomain',
+                    'tcp-self', 'wildcard', 'zonesub', '*'):
+                raise ValueError("Invalid match type.", match)
+            if target is None:
+                target = self.origin
             self.extra_conf.setdefault('update-policy', []).append(
-                'grant {} {} {}'.format(fqdn, update_policy, self.origin)
+                '{} {} {} {}'.format(permission, fqdn, match, target)
             )
 
     def dumps_conf(self, *args, **kwargs):
