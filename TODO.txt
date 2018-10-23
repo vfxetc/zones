@@ -1,7 +1,18 @@
 
+- Strip trailing '.@'.
+    - Assert that names follow the specs after that.
+
+- '@' turns into None.
+
+- Don't allow absolute names that don't match the origin.
+
+- Zone.subzone(name) -> Subzone
+    Subzone proxies all methods to the zone, but by joining the name on first.
+
+- Zone.dmarc(name, rua=..., ruf=..., **kwargs)
+- Zone.dkim(name, p, k='rsa', v='DKIM1')
+- These return odict-y TXT records that return '; '.join('{}={}'.format(k, v) for k, v in self.items())
+
+- SPF returns list-y TEXT record that return ' '.join(self)
+
 - Use `named-checkconf -p` to assert it is looking at the right file.
-
-- `zones-named` command to manage building for bind.
-    - Defaults to pulling config from `/etc/bind/zonesconf.py`
-
-- `named.conf.zones` should point to abspath of zones, not through symlinks.

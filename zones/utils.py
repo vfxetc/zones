@@ -1,4 +1,6 @@
 
+from ._compat import basestring
+
 
 def is_fqdn(x):
 	return x.endswith('.')
@@ -29,7 +31,7 @@ def iterdumps_conf(conf, level=0):
     indent = '    ' * level
     
     if isinstance(conf, dict):
-        for key, value in conf.iteritems():
+        for key, value in conf.items():
             yield indent + key + ' '
             for x in iterdumps_conf(value, level + 1):
                 yield x

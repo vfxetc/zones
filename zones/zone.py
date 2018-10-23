@@ -3,17 +3,21 @@ import re
 import time
 
 from . import utils
+from ._compat import basestring
 from .record import Record
 from .spf import SPF
 
+
 EPOCH_OFFSET = -1483207200
+
+
 
 
 class Zone(object):
 
     def __init__(self, origin, primary_nameserver=None, hostmaster_email=None,
-        serial_number=None, slave_refresh=None, slave_retry=None,
-        slave_expiry=None, ttl=None, epoch_offset=EPOCH_OFFSET,
+        serial_number=None, secondary_refresh=None, secondary_retry=None,
+        secondary_expiry=None, ttl=None, epoch_offset=EPOCH_OFFSET,
     ):
 
         if not utils.is_fqdn(origin):
@@ -36,9 +40,10 @@ class Zone(object):
 
         self.serial_number = serial_number or str(int(time.time() + epoch_offset))
 
-        self.slave_refresh = slave_refresh or '1d'
-        self.slave_retry = slave_retry or '1h'
-        self.slave_expiry = slave_expiry or '4w'
+        self.secondary_refresh = secondary_refresh or '1d'
+        self.secondary_retry = secondary_retry or '1h'
+        self.secondary_expiry = secondary_expiry or '4w'
+
         self.ttl = ttl or '1h'
 
         self.records = []
@@ -101,24 +106,30 @@ class Zone(object):
         for x in utils.iterdumps_conf({'zone "{}"'.format(self.origin): conf}):
             yield x
 
-
     def dumps_zone(self):
         return ''.join(self.iterdumps_zone())
 
     def iterdumps_zone(self):
+        for x in self.iterdumps_zone_head():
+            yield x
+        for x in self.iterdumps_zone_body():
+            yield x
+
+    def iterdumps_zone_head(self):
 
         yield '$ORIGIN %s\n' % self.origin
         yield '$TTL %s\n' % self.ttl
 
         yield '''@ IN SOA {primary_nameserver} {hostmaster_email} (
-            {serial_number} ;; Serial number.
-            {slave_refresh} ;; Slave refresh.
-            {slave_retry} ;; Slave retry.
-            {slave_expiry} ;; Slave expiry.
-            {ttl} ;; Default TTL.
+            {serial_number} ; Serial number.
+            {secondary_refresh} ; Secondary refresh.
+            {secondary_retry} ; Secondary retry.
+            {secondary_expiry} ; Secondary expiry.
+            {ttl} ; Default TTL.
 )
 '''.format(**self.__dict__)
 
+    def iterdumps_zone_body(self):
         for rec in self.records:
             if isinstance(rec, basestring):
                 yield rec.rstrip() + '\n'
