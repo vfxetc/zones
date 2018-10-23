@@ -54,8 +54,11 @@ class Zone(object):
         self.extra_conf = {'type': 'master'}
         self.outer_conf = {}
 
-    def add(self, *args, **kwargs):
-        rec = Record(*args, **kwargs)
+    def subzone(self, name):
+        return Subzone(self, name)
+
+    def add(self, name, *args, **kwargs):
+        rec = Record(name, *args, **kwargs)
         self.records.append(rec)
         return rec
 
@@ -69,6 +72,7 @@ class Zone(object):
         self.records.append(''.join('; ' + line for line in comment.splitlines()))
 
     def spf(self, name='@', default=''):
+        name = utils.resolve_origin(name)
         rec = self.spf_records.get(name)
         if rec is None:
             rec = SPF(name)
@@ -78,7 +82,8 @@ class Zone(object):
         return rec
 
     def add_update_key(self, key_name, secret, algorithm='hmac-md5', match='self', target=None, permission='grant'):
-        fqdn = key_name if key_name.endswith('.') else utils.join_name(key_name, self.origin)
+
+        fqdn = utils.resolve_origin(key_name, self.origin)
         self.outer_conf['key "{}"'.format(fqdn)] = {
             'secret': '"{}"'.format(secret),
             'algorithm': algorithm
@@ -102,9 +107,9 @@ class Zone(object):
     def iterdumps_conf(self, **kwargs):
         for x in conf.iterdumps_conf(self.outer_conf):
             yield x
-        conf = self.extra_conf.copy()
-        conf.update(kwargs)
-        for x in conf.iterdumps_conf({'zone "{}"'.format(self.origin): conf}):
+        extra_conf = self.extra_conf.copy()
+        extra_conf.update(kwargs)
+        for x in conf.iterdumps_conf({'zone "{}"'.format(self.origin): extra_conf}):
             yield x
 
     def dumps_zone(self):
@@ -136,6 +141,35 @@ class Zone(object):
                 yield rec.rstrip() + '\n'
             else:
                 yield rec.dumps()
+
+
+class Subzone(object):
+
+    def __init__(self, root, name):
+        self.root = root
+        self.name = name
+
+    def subzone(self, name):
+        return Subzone(self.root, utils.join_name(name, self.name))
+
+    def resolve_name(self, name):
+        return utils.resolve_origin(utils.join_name(name, '@'), self.name)
+
+    def __getattr__(self, name):
+        if re.match(r'^[A-Z]+', name):
+            return functools.partial(self.add, type=name)
+        else:
+            raise AttributeError(name)
+
+    def add(self, name, *args, **kwargs):
+        return self.root.add(self.resolve_name(name), *args, **kwargs)
+
+    def CNAME(self, name, other, *args, **kwargs):
+        return self.root.add(self.resolve_name(name), self.resolve_name(other), *args, type='CNAME', **kwargs)
+
+    def spf(self, name='@', *args, **kwargs):
+        return self.root.spf(self.resolve_name(name), *args, **kwargs)
+
 
 
 

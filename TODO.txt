@@ -1,13 +1,5 @@
 
-- Strip trailing '.@'.
-    - Assert that names follow the specs after that.
-
-- '@' turns into None.
-
 - Don't allow absolute names that don't match the origin.
-
-- Zone.subzone(name) -> Subzone
-    Subzone proxies all methods to the zone, but by joining the name on first.
 
 - Zone.dmarc(name, rua=..., ruf=..., **kwargs)
 - Zone.dkim(name, p, k='rsa', v='DKIM1')
