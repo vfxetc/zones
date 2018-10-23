@@ -83,7 +83,7 @@ class Zone(object):
 
     def add_update_key(self, key_name, secret, algorithm='hmac-md5', match='self', target=None, permission='grant'):
 
-        fqdn = utils.resolve_origin(key_name, self.origin)
+        fqdn = utils.resolve_origin(utils.join_name(key_name, '@'), self.origin)
         self.outer_conf['key "{}"'.format(fqdn)] = {
             'secret': '"{}"'.format(secret),
             'algorithm': algorithm

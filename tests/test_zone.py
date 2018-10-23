@@ -12,7 +12,7 @@ class TestZone(TestCase):
 
         self.assertMatches(r'''
 
-key "fookey" {
+key "fookey.example.com." {
     secret "foosecret";
     algorithm hmac-md5;
 };
@@ -20,7 +20,7 @@ key "fookey" {
 zone "example.com." {
     type master;
     update-policy {
-        grant fookey self example.com.;
+        grant fookey.example.com. self example.com.;
     };
 };
 
