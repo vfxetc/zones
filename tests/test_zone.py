@@ -39,6 +39,11 @@ zone "example.com." {
         spf = zone.spf()
         spf.add('a', '3.4.5.6')
 
+        dmarc = zone.dmarc(ruf='mailto:dmarc-ruf@example.com')
+        dmarc['rua'] = 'mailto:dmarc-rua@example.com'
+
+        zone.dmarc('foo', pct=50, ruf='mailto:dmarc-ruf@foo.example.com')
+
         self.assertMatches(r'''
 
 \$ORIGIN example.com.
@@ -57,6 +62,9 @@ bar IN CNAME foo
 baz IN TXT "text goes here"
 
 @ IN TXT "v=spf1 a:3.4.5.6"
+_dmarc IN TXT "v=DMARC1; p=none; pct=100; sp=none; aspf=r; ruf=mailto:dmarc-ruf@example.com; rua=mailto:dmarc-rua@example.com"
+_dmarc.foo IN TXT "v=DMARC1; p=none; pct=50; sp=none; aspf=r; ruf=mailto:dmarc-ruf@foo.example.com"
+
 
 ''', zone.dumps_zone())
 

@@ -7,6 +7,7 @@ from . import conf
 from ._compat import basestring
 from .record import Record
 from .spf import SPF
+from .dmarc import DMARC
 
 
 EPOCH_OFFSET = -1483207200
@@ -48,7 +49,7 @@ class Zone(object):
         self.ttl = ttl or '1h'
 
         self.records = []
-        self.spf_records = {}
+        self._structured_txt_records = {}
 
         # For dumping inside and outside of zones.
         self.extra_conf = {'type': 'master'}
@@ -68,16 +69,27 @@ class Zone(object):
         else:
             raise AttributeError(name)
 
+    def _structured_txt(self, struct_type, name, cls):
+        name = utils.resolve_origin(name)
+        map_ = self._structured_txt_records.setdefault(struct_type, {})
+        try:
+            return map_[name]
+        except KeyError:
+            rec = map_[name] = cls(name)
+            self.records.append(rec)
+            return rec
+
     def comment(self, comment):
         self.records.append(''.join('; ' + line for line in comment.splitlines()))
 
+    def dmarc(self, name='@', **kwargs):
+        name = utils.join_name('_dmarc', name)
+        rec = self._structured_txt('dmarc', name, DMARC)
+        rec.data.update(kwargs)
+        return rec
+
     def spf(self, name='@', default=''):
-        name = utils.resolve_origin(name)
-        rec = self.spf_records.get(name)
-        if rec is None:
-            rec = SPF(name)
-            self.records.append(rec)
-            self.spf_records[name] = rec
+        rec = self._structured_txt('spf', name, SPF)
         rec.default = rec.default or default
         return rec
 
