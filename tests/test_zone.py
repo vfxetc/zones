@@ -64,8 +64,10 @@ baz IN TXT "text goes here"
     def test_subzone_basics(self):
 
         zone = Zone('example.com.')
+
         sub = zone.subzone('sub')
         self.assertEqual(sub.name, 'sub')
+        self.assertEqual(sub.origin, 'sub.example.com.')
 
         zone.A('foo', '1.2.3.4')
         rr = sub.A('foo', '2.3.4.5')
@@ -83,6 +85,7 @@ baz IN TXT "text goes here"
 
         subsub = sub.subzone('sub2')
         self.assertEqual(subsub.name, 'sub2.sub')
+        self.assertEqual(subsub.origin, 'sub2.sub.example.com.')
         subsub.A('@', '4.5.6.7')
 
         rr = subsub.A('foo', '5.6.7.8')

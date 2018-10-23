@@ -148,6 +148,7 @@ class Subzone(object):
     def __init__(self, root, name):
         self.root = root
         self.name = name
+        self.origin = utils.join_name(name, root.origin)
 
     def subzone(self, name):
         return Subzone(self.root, utils.join_name(name, self.name))
