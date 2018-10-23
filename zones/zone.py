@@ -3,6 +3,7 @@ import re
 import time
 
 from . import utils
+from . import conf
 from ._compat import basestring
 from .record import Record
 from .spf import SPF
@@ -99,11 +100,11 @@ class Zone(object):
         return ''.join(self.iterdumps_conf(*args, **kwargs))
 
     def iterdumps_conf(self, **kwargs):
-        for x in utils.iterdumps_conf(self.outer_conf):
+        for x in conf.iterdumps_conf(self.outer_conf):
             yield x
         conf = self.extra_conf.copy()
         conf.update(kwargs)
-        for x in utils.iterdumps_conf({'zone "{}"'.format(self.origin): conf}):
+        for x in conf.iterdumps_conf({'zone "{}"'.format(self.origin): conf}):
             yield x
 
     def dumps_zone(self):
@@ -135,4 +136,6 @@ class Zone(object):
                 yield rec.rstrip() + '\n'
             else:
                 yield rec.dumps()
+
+
 
