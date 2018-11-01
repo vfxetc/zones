@@ -85,7 +85,7 @@ class Zone(object):
     def dmarc(self, name='@', **kwargs):
         name = utils.join_name('_dmarc', name)
         rec = self._structured_txt('dmarc', name, DMARC)
-        rec.data.update(kwargs)
+        rec.update(kwargs)
         return rec
 
     def spf(self, name='@', default=''):

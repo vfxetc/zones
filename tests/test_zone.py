@@ -40,7 +40,7 @@ zone "example.com." {
         spf.add('a', '3.4.5.6')
 
         dmarc = zone.dmarc(ruf='mailto:dmarc-ruf@example.com')
-        dmarc['rua'] = 'mailto:dmarc-rua@example.com'
+        dmarc['rua'] = 'dmarc-rua@example.com' # NOTE: Missing mailto
 
         zone.dmarc('foo', pct=50, ruf='mailto:dmarc-ruf@foo.example.com')
 
