@@ -31,5 +31,12 @@ class DMARC(Record):
         return self.data.get(key, default)
 
     def dumps(self):
-        return super(DMARC, self).dumps(data=['; '.join('{}={}'.format(k, v) for k, v in self.data.items())])
+
+        parts = []
+        for k, v in self.data.items():
+            if isinstance(v, (list, tuple)):
+                v = ','.join(v)
+            parts.append('{}={}'.format(k, v))
+
+        return super(DMARC, self).dumps(data=['; '.join(parts)])
 
