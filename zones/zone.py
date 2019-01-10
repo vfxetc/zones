@@ -93,13 +93,19 @@ class Zone(object):
         rec.default = rec.default or default
         return rec
 
-    def add_update_key(self, key_name, secret, algorithm='hmac-md5', match='self', target=None, permission='grant'):
+    def add_update_key(self, key_name, secret, algorithm='hmac-md5', match='self', target=None, permission='grant', type=None):
 
         fqdn = utils.resolve_origin(utils.join_name(key_name, '@'), self.origin)
         self.outer_conf['key "{}"'.format(fqdn)] = {
             'secret': '"{}"'.format(secret),
             'algorithm': algorithm
         }
+
+        # Bind says "optional" tname should be the same as the identity.
+        if target is None:
+            if match in ('self', 'selfsub', 'selfwildcard'):
+                target = key_name + '.' + self.origin
+
         if match:
             if permission not in ('grant', 'deny'):
                 raise ValueError("Invalid permission.", permission)
@@ -107,10 +113,8 @@ class Zone(object):
                     'ms-subdomain', 'name', 'self', 'selfsub', 'selfwildcard', 'subdomain',
                     'tcp-self', 'wildcard', 'zonesub', '*'):
                 raise ValueError("Invalid match type.", match)
-            if target is None:
-                target = self.origin
             self.extra_conf.setdefault('update-policy', []).append(
-                '{} {} {} {}'.format(permission, fqdn, match, target)
+                '{} {} {} {}'.format(permission, fqdn, match, target if target else '', type if type else '')
             )
 
     def dumps_conf(self, *args, **kwargs):
