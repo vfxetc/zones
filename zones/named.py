@@ -119,6 +119,11 @@ def build(args):
             epoch_offset=args.epoch_offset,
         )
         zones.append(zone)
+        
+        # Force everyone to the same serial.
+        # This lets us use zone-wide DNAMEs.
+        zone.serial_number = zones[0].serial_number
+
         return zone
 
     for filename in os.listdir(args.zones_dir):
@@ -208,7 +213,9 @@ def check_live(args, server='localhost', delay=0.1, tries=3):
         # Try twice. Sometimes it takes the kick from the first request
         # to clear the caches.
         for _ in xrange(tries):
+            # This is a little more complex for zone-wide DNAMEs.
             output = subprocess.check_output(['dig', '@' + server, '+short', '_serial.' + name.strip('.'), 'TXT'])
+            output = (output.splitlines() or [''])[-1]
             output = output.strip().strip('"')
             if serial == output:
                 print(' OK')
