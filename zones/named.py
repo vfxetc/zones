@@ -37,7 +37,7 @@ def main():
     parser.add_argument('--hostmaster-email')
     parser.add_argument('--ttl', type=int, default=300)
 
-    parser.add_argument('-z', '--zones-dir', default='zones')
+    parser.add_argument('-z', '--zones-dir', default=[], action='append')
     parser.add_argument('--build-root', default='build')
     parser.add_argument('--build-name', default=datetime.datetime.utcnow().strftime('%Y%m%d-%H%M%S'))
 
@@ -48,6 +48,8 @@ def main():
     parser.add_argument('--no-reload', action='store_true')
 
     args = parser.parse_args()
+    
+    args.zones_dir = args.zones_dir or ['zones'] # Reasonable default.
 
     # Allow group to write.
     os.umask(0o002)
@@ -126,29 +128,32 @@ def build(args):
 
         return zone
 
-    for filename in os.listdir(args.zones_dir):
-        if filename.startswith('.') or not filename.endswith('.py'):
-            continue
-        
-        domain = os.path.splitext(filename)[0]
-        zonename = domain + '.'
-        print(domain)
+    for root in args.zones_dir:
+        for filename in sorted(os.listdir(root)):
+            if filename.startswith('.') or not filename.endswith('.py'):
+                continue
+            
+            domain = os.path.splitext(filename)[0]
+            zonename = domain + '.'
+            print(domain)
 
-        zone = create_zone(zonename)
-        if args.slaves:
-            zone.extra_conf['also-notify'] = args.slaves
-        
-        # Create the zone and eval the script.
-        namespace = {'zone': zone, 'z': zone}
-        execfile(os.path.join(args.zones_dir, filename), namespace)
+            zone = create_zone(zonename)
+            if args.slaves:
+                zone.extra_conf['also-notify'] = args.slaves
+            
+            # Create the zone and eval the script.
+            namespace = {'zone': zone, 'z': zone}
+            execfile(os.path.join(root, filename), namespace)
 
-        # Add our check to it.
-        zone.comment('Deployment check')
-        zone.TXT('_serial', zone.serial_number, ttl=1)
+            # Add our check to it.
+            zone.comment('Deployment check')
+            zone.TXT('_serial', zone.serial_number, ttl=1)
 
-        path = os.path.join(build_zones_dir, domain)
-        with open(path, 'wb') as fh:
-            fh.write(zone.dumps_zone())
+            path = os.path.join(build_zones_dir, domain)
+            with open(path, 'wb') as fh:
+                fh.write(zone.dumps_zone())
+    
+    zones.sort(key=lambda zone: zone.origin)
 
     # Write out the conf.
     with open(os.path.join(build_dir, 'named.conf'), 'wb') as fh:
@@ -182,7 +187,7 @@ def check_conf(args, build_dir):
         subprocess.check_call(['named-checkconf', os.path.join(build_dir, 'named.conf')])
 
         zone_dir = os.path.join(build_dir, 'zones')
-        for name in os.listdir(zone_dir):
+        for name in sorted(os.listdir(zone_dir)):
             subprocess.check_call(['named-checkzone', name + '.', os.path.join(zone_dir, name)])
 
         # The full thing as it stands.
@@ -197,7 +202,7 @@ def check_live(args, server='localhost', delay=0.1, tries=3):
 
     did_error = False
     live_dir = os.path.join(args.build_root, 'live', 'zones')
-    for name in os.listdir(live_dir):
+    for name in sorted(os.listdir(live_dir)):
 
         # TODO: Signal this another way.
         if name.startswith('rpz'):
